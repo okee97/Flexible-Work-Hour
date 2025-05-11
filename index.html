@@ -42,6 +42,8 @@
             --card-bg: #ffffff;
             --text-color: #333333;
             --border-color: #e5e7eb;
+            --dark-bg: #1f2937;
+            --dark-card: #111827;
         }
         
         * {
@@ -60,25 +62,27 @@
             -webkit-text-size-adjust: 100%;
         }
         
+        .header {
+            background-color: var(--dark-bg);
+            color: white;
+            padding: 16px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
         .container {
             max-width: 100%;
             margin: 0 auto;
             padding: 12px;
-        }
-        
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            padding: 16px;
-            margin-bottom: 16px;
-        }
-        
-        h1 {
-            text-align: center;
-            margin: 0 0 16px 0;
-            font-size: 24px;
-            color: var(--text-color);
         }
         
         .day-card {
@@ -103,8 +107,6 @@
         }
         
         .work-hours {
-            display: flex;
-            justify-content: space-between;
             font-weight: 600;
         }
         
@@ -204,6 +206,7 @@
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
         
         .summary-normal {
@@ -269,6 +272,7 @@
             padding: 16px;
             margin-bottom: 16px;
             border-left: 4px solid var(--primary-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
         
         .info-card h3 {
@@ -288,6 +292,7 @@
             padding: 12px;
             border-radius: 12px;
             background-color: #f9fafb;
+            margin-bottom: 20px;
         }
         
         /* 앱 설치 프롬프트 */
@@ -350,6 +355,10 @@
                 --border-color: #374151;
             }
             
+            .header {
+                background-color: #0f172a;
+            }
+            
             .lunch-option {
                 background-color: #1e293b;
             }
@@ -380,7 +389,7 @@
                 padding: 8px;
             }
             
-            h1 {
+            .header h1 {
                 font-size: 20px;
             }
             
@@ -418,13 +427,11 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="header">
         <h1>유연근무 계산기</h1>
-        
-        <div id="days-container">
-            <!-- JavaScript will fill this -->
-        </div>
-        
+    </div>
+    
+    <div class="container">
         <div id="summary" class="summary-card summary-normal">
             <div class="summary-content">
                 <div class="total-hours">
@@ -441,6 +448,11 @@
             <h3>공동근무시간 규정</h3>
             <p>* 공동근무시간: 10:00~12:00, 13:00~16:00 (점심시간 제외, 총 5시간)</p>
             <p>* 1일 근무시간이 8시간 미만인 경우, 근무시간의 50% 이상은 공동근무시간에 근무해야 합니다.</p>
+        </div>
+        
+        <!-- 요일별 카드가 이 곳에 추가됨 -->
+        <div id="days-container">
+            <!-- JavaScript로 생성됨 -->
         </div>
         
         <div class="footer-info">
@@ -463,9 +475,21 @@
     </div>
 
     <script>
+        // 페이지 로딩 시 실행
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('페이지 로드됨');
+            
+            // 요일 배열
             const days = ['월요일', '화요일', '수요일', '목요일', '금요일'];
+            
+            // days-container 요소
             const daysContainer = document.getElementById('days-container');
+            
+            // 요소가 있는지 확인
+            if (!daysContainer) {
+                console.error('days-container 요소를 찾을 수 없습니다');
+                return;
+            }
             
             // 초기 데이터
             let workTimes = days.map(() => ({
@@ -477,22 +501,56 @@
                 coreTimeStatus: true
             }));
             
-            // 요일 카드 생성
+            // 로컬 스토리지에서 데이터 로드
+            function loadWorkTimes() {
+                const savedData = localStorage.getItem('flexibleWorkTimes');
+                if (savedData) {
+                    try {
+                        const parsedData = JSON.parse(savedData);
+                        if (Array.isArray(parsedData) && parsedData.length === 5) {
+                            workTimes = parsedData;
+                            console.log('저장된 데이터 로드됨:', workTimes);
+                        }
+                    } catch (e) {
+                        console.error('저장된 데이터 로드 중 오류:', e);
+                    }
+                }
+            }
+            
+            // 로컬 스토리지에 데이터 저장
+            function saveWorkTimes() {
+                try {
+                    localStorage.setItem('flexibleWorkTimes', JSON.stringify(workTimes));
+                    console.log('데이터 저장됨');
+                } catch (e) {
+                    console.error('데이터 저장 중 오류:', e);
+                }
+            }
+            
+            // 요일별 카드 생성
             function createDayCards() {
+                console.log('요일 카드 생성 시작');
+                
+                // 기존 내용 초기화
                 daysContainer.innerHTML = '';
                 
+                // 각 요일에 대한 카드 생성
                 days.forEach((day, index) => {
+                    // 요일 카드 생성
                     const dayCard = document.createElement('div');
                     dayCard.className = 'day-card';
                     
+                    // 요일 헤더 생성
                     const dayHeader = document.createElement('div');
                     dayHeader.className = 'day-header';
                     
+                    // 요일 이름
                     const dayName = document.createElement('div');
                     dayName.className = 'day-name';
                     dayName.textContent = day;
                     dayHeader.appendChild(dayName);
                     
+                    // 근무 시간 표시
                     const workHours = document.createElement('div');
                     workHours.className = 'work-hours';
                     workHours.id = `work-hours-${index}`;
@@ -575,8 +633,11 @@
                     
                     dayCard.appendChild(statusRow);
                     
+                    // 카드를 컨테이너에 추가
                     daysContainer.appendChild(dayCard);
                 });
+                
+                console.log('요일 카드 생성 완료');
             }
             
             // 근무 시간 계산 함수
@@ -717,12 +778,16 @@
                 days.forEach((day, index) => {
                     // 근무 시간 업데이트
                     const workHoursElement = document.getElementById(`work-hours-${index}`);
-                    workHoursElement.textContent = workTimes[index].dailyHours.toFixed(2) + ' 시간';
+                    if (workHoursElement) {
+                        workHoursElement.textContent = workTimes[index].dailyHours.toFixed(2) + ' 시간';
+                    }
                     
                     // 공동근무 상태 업데이트
                     const coreTimeStatusElement = document.getElementById(`core-time-status-${index}`);
-                    coreTimeStatusElement.textContent = workTimes[index].coreTimeStatus ? '충족' : '미달';
-                    coreTimeStatusElement.className = `core-time-status ${workTimes[index].coreTimeStatus ? 'status-ok' : 'status-fail'}`;
+                    if (coreTimeStatusElement) {
+                        coreTimeStatusElement.textContent = workTimes[index].coreTimeStatus ? '충족' : '미달';
+                        coreTimeStatusElement.className = `core-time-status ${workTimes[index].coreTimeStatus ? 'status-ok' : 'status-fail'}`;
+                    }
                 });
             }
             
@@ -734,7 +799,10 @@
                 
                 // 총 근무 시간 계산
                 const total = workTimes.reduce((sum, day) => sum + day.dailyHours, 0);
-                totalHoursElement.textContent = total.toFixed(2);
+                
+                if (totalHoursElement) {
+                    totalHoursElement.textContent = total.toFixed(2);
+                }
                 
                 // 공동근무시간 규정 위반 여부 확인
                 const hasCoreTimeViolation = workTimes.some(day => !day.coreTimeStatus);
@@ -763,23 +831,14 @@
                     summaryClass = 'summary-normal';
                 }
                 
-                statusElement.textContent = status;
-                statusElement.className = `status-badge ${statusClass}`;
+                if (statusElement) {
+                    statusElement.textContent = status;
+                    statusElement.className = `status-badge ${statusClass}`;
+                }
                 
-                // 요약 배경색 업데이트
-                summaryElement.className = `summary-card ${summaryClass}`;
-            }
-            
-            // 로컬 스토리지에 데이터 저장
-            function saveWorkTimes() {
-                localStorage.setItem('flexibleWorkTimes', JSON.stringify(workTimes));
-            }
-            
-            // 로컬 스토리지에서 데이터 로드
-            function loadWorkTimes() {
-                const savedData = localStorage.getItem('flexibleWorkTimes');
-                if (savedData) {
-                    workTimes = JSON.parse(savedData);
+                if (summaryElement) {
+                    // 요약 배경색 업데이트
+                    summaryElement.className = `summary-card ${summaryClass}`;
                 }
             }
             
@@ -796,42 +855,53 @@
                 // 설치 이벤트 저장
                 deferredPrompt = e;
                 // 설치 프롬프트 표시
-                installPrompt.style.display = 'block';
-            });
-            
-            // 설치 버튼 클릭 처리
-            installButton.addEventListener('click', () => {
-                // 설치 프롬프트 숨기기
-                installPrompt.style.display = 'none';
-                // 설치 프롬프트 표시
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    // 사용자의 선택 확인
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('사용자가 앱 설치를 수락했습니다.');
-                        } else {
-                            console.log('사용자가 앱 설치를 거부했습니다.');
-                        }
-                        // deferredPrompt 초기화
-                        deferredPrompt = null;
-                    });
+                if (installPrompt) {
+                    installPrompt.style.display = 'block';
                 }
             });
             
+            // 설치 버튼 클릭 처리
+            if (installButton) {
+                installButton.addEventListener('click', () => {
+                    // 설치 프롬프트 숨기기
+                    installPrompt.style.display = 'none';
+                    // 설치 프롬프트 표시
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        // 사용자의 선택 확인
+                        deferredPrompt.userChoice.then((choiceResult) => {
+                            if (choiceResult.outcome === 'accepted') {
+                                console.log('사용자가 앱 설치를 수락했습니다.');
+                            } else {
+                                console.log('사용자가 앱 설치를 거부했습니다.');
+                            }
+                            // deferredPrompt 초기화
+                            deferredPrompt = null;
+                        });
+                    }
+                });
+            }
+            
             // 닫기 버튼 클릭 처리
-            dismissButton.addEventListener('click', () => {
-                installPrompt.style.display = 'none';
-            });
+            if (dismissButton) {
+                dismissButton.addEventListener('click', () => {
+                    installPrompt.style.display = 'none';
+                });
+            }
             
             // 앱 초기화
             function initApp() {
+                console.log('앱 초기화 시작');
+                
                 // 저장된 데이터 로드
                 loadWorkTimes();
+                
                 // 요일 카드 생성
                 createDayCards();
+                
                 // UI 업데이트
                 updateUI();
+                
                 // 요약 정보 업데이트
                 updateSummary();
                 
@@ -839,6 +909,8 @@
                 document.addEventListener('dblclick', function(e) {
                     e.preventDefault();
                 });
+                
+                console.log('앱 초기화 완료');
             }
             
             // Service Worker 등록
@@ -854,5 +926,9 @@
                 });
             }
             
-            // 앱 실행
+            // 앱 초기화 실행
             initApp();
+        });
+    </script>
+</body>
+</html>
