@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>유연근무 계산기</title>
+    <style>
+        :root {
+            --primary-color: #0ea5e9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --light-bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e5e7eb;
+        }
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            font-size: 16px;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 12px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin: 0 0 16px 0;
+            font-size: 24px;
+            color: var(--text-color);
+        }
+        
+        .day-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            padding: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .day-name {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .work-hours {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+        
+        .time-inputs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .time-field {
+            flex: 1;
+        }
+        
+        .time-label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #666;
+        }
+        
+        input[type="time"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            -webkit-appearance: none;
+        }
+        
+        .lunch-option {
+            display: flex;
+            align-items: center;
+            background-color: #f9fafb;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .lunch-option label {
+            margin-left: 8px;
+            flex: 1;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid var(--primary-color);
+            -webkit-appearance: none;
+            position: relative;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        input[type="checkbox"]:checked {
+            background-color: var(--primary-color);
+        }
+        
+        input[type="checkbox"]:checked:after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 4px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+        
+        .core-time-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .status-ok {
+            color: var(--success-color);
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+        
+        .status-fail {
+            color: var(--danger-color);
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+        
+        .summary-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .summary-normal {
+            background-color: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .summary-over {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .summary-under {
+            background-color: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .summary-warning {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .summary-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .total-hours {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
+        .status-normal {
+            background-color: var(--success-color);
+        }
+        
+        .status-over {
+            background-color: var(--danger-color);
+        }
+        
+        .status-under {
+            background-color: var(--warning-color);
+        }
+        
+        .status-warning {
+            background-color: var(--danger-color);
+        }
+        
+        .info-card {
+            background-color: #f0f9ff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .info-card h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+        
+        .info-card p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .footer-info {
+            font-size: 14px;
+            color: #666;
+            padding: 12px;
+            border-radius: 12px;
+            background-color: #f9fafb;
+        }
+        
+        /* 다크 모드 지원 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary-color: #38bdf8;
+                --success-color: #34d399;
+                --warning-color: #fbbf24;
+                --danger-color: #f87171;
+                --light-bg: #1f2937;
+                --card-bg: #111827;
+                --text-color: #f3f4f6;
+                --border-color: #374151;
+            }
+            
+            .lunch-option {
+                background-color: #1e293b;
+            }
+            
+            .info-card {
+                background-color: #0c4a6e;
+            }
+            
+            .footer-info {
+                background-color: #1e293b;
+                color: #d1d5db;
+            }
+            
+            input[type="time"] {
+                background-color: #1e293b;
+                color: #f3f4f6;
+            }
+        }
+        
+        /* 모바일 최적화 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+            
+            .day-name {
+                font-size: 16px;
+            }
+            
+            .time-inputs {
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            input[type="time"] {
+                font-size: 14px;
+                padding: 6px;
+            }
+            
+            .status-badge {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>유연근무 계산기</h1>
+        
+        <div id="days-container">
+            <!-- JavaScript will fill this -->
+        </div>
+        
+        <div id="summary" class="summary-card summary-normal">
+            <div class="summary-content">
+                <div class="total-hours">
+                    <span>주간 총 근무시간:</span> <span id="totalHours">40.00</span> 시간
+                </div>
+                <div>
+                    <span>상태:</span> 
+                    <div id="status" class="status-badge status-normal">40시간 충족</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-card">
+            <h3>공동근무시간 규정</h3>
+            <p>* 공동근무시간: 10:00~12:00, 13:00~16:00 (점심시간 제외, 총 5시간)</p>
+            <p>* 1일 근무시간이 8시간 미만인 경우, 근무시간의 50% 이상은 공동근무시간에 근무해야 합니다.</p>
+        </div>
+        
+        <div class="footer-info">
+            <p>* 하루 근무 시간 = 퇴근 시각 - 출근 시각 - 점심 시간(1시간)</p>
+            <p>* 점심 시간은 체크박스 선택 시 12:00~13:00(1시간)이 근무 시간에서 제외됩니다.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const days = ['월요일', '화요일', '수요일', '목요일', '금요일'];
+            const daysContainer = document.getElementById('days-container');
+            
+            // 초기 데이터
+            let workTimes = days.map(() => ({
+                startTime: '09:00',
+                endTime: '18:00',
+                lunchBreak: true,
+                dailyHours: 8,
+                coreTimeHours: 5,
+                coreTimeStatus: true
+            }));
+            
+            // 요일 카드 생성
+            function createDayCards() {
+                daysContainer.innerHTML = '';
+                
+                days.forEach((day, index) => {
+                    const dayCard = document.createElement('div');
+                    dayCard.className = 'day-card';
+                    
+                    const dayHeader = document.createElement('div');
+                    dayHeader.className = 'day-header';
+                    
+                    const dayName = document.createElement('div');
+                    dayName.className = 'day-name';
+                    dayName.textContent = day;
+                    dayHeader.appendChild(dayName);
+                    
+                    const workHours = document.createElement('div');
+                    workHours.className = 'work-hours';
+                    workHours.id = `work-hours-${index}`;
+                    workHours.textContent = workTimes[index].dailyHours.toFixed(2) + ' 시간';
+                    dayHeader.appendChild(workHours);
+                    
+                    dayCard.appendChild(dayHeader);
+                    
+                    // 시간 입력 영역
+                    const timeInputs = document.createElement('div');
+                    timeInputs.className = 'time-inputs';
+                    
+                    // 출근 시각
+                    const startField = document.createElement('div');
+                    startField.className = 'time-field';
+                    
+                    const startLabel = document.createElement('label');
+                    startLabel.className = 'time-label';
+                    startLabel.textContent = '출근 시각';
+                    startField.appendChild(startLabel);
+                    
+                    const startInput = document.createElement('input');
+                    startInput.type = 'time';
+                    startInput.value = workTimes[index].startTime;
+                    startInput.addEventListener('change', (e) => handleTimeChange(index, 'startTime', e.target.value));
+                    startField.appendChild(startInput);
+                    
+                    timeInputs.appendChild(startField);
+                    
+                    // 퇴근 시각
+                    const endField = document.createElement('div');
+                    endField.className = 'time-field';
+                    
+                    const endLabel = document.createElement('label');
+                    endLabel.className = 'time-label';
+                    endLabel.textContent = '퇴근 시각';
+                    endField.appendChild(endLabel);
+                    
+                    const endInput = document.createElement('input');
+                    endInput.type = 'time';
+                    endInput.value = workTimes[index].endTime;
+                    endInput.addEventListener('change', (e) => handleTimeChange(index, 'endTime', e.target.value));
+                    endField.appendChild(endInput);
+                    
+                    timeInputs.appendChild(endField);
+                    
+                    dayCard.appendChild(timeInputs);
+                    
+                    // 점심 시간 체크박스
+                    const lunchOption = document.createElement('div');
+                    lunchOption.className = 'lunch-option';
+                    
+                    const lunchInput = document.createElement('input');
+                    lunchInput.type = 'checkbox';
+                    lunchInput.id = `lunch-${index}`;
+                    lunchInput.checked = workTimes[index].lunchBreak;
+                    lunchInput.addEventListener('change', (e) => handleLunchBreakChange(index, e.target.checked));
+                    lunchOption.appendChild(lunchInput);
+                    
+                    const lunchLabel = document.createElement('label');
+                    lunchLabel.htmlFor = `lunch-${index}`;
+                    lunchLabel.textContent = '점심시간 12:00~13:00 적용';
+                    lunchOption.appendChild(lunchLabel);
+                    
+                    dayCard.appendChild(lunchOption);
+                    
+                    // 공동근무 상태
+                    const statusRow = document.createElement('div');
+                    statusRow.className = 'status-row';
+                    
+                    const coreTimeLabel = document.createElement('div');
+                    coreTimeLabel.textContent = '공동근무시간 상태:';
+                    statusRow.appendChild(coreTimeLabel);
+                    
+                    const coreTimeStatus = document.createElement('div');
+                    coreTimeStatus.className = `core-time-status ${workTimes[index].coreTimeStatus ? 'status-ok' : 'status-fail'}`;
+                    coreTimeStatus.textContent = workTimes[index].coreTimeStatus ? '충족' : '미달';
+                    coreTimeStatus.id = `core-time-status-${index}`;
+                    statusRow.appendChild(coreTimeStatus);
+                    
+                    dayCard.appendChild(statusRow);
+                    
+                    daysContainer.appendChild(dayCard);
+                });
+            }
+            
+            // 근무 시간 계산 함수
+            function calculateHours(start, end, lunchBreak) {
+                if (!start || !end) return 0;
+                
+                const [startHour, startMinute] = start.split(':').map(Number);
+                const [endHour, endMinute] = end.split(':').map(Number);
+                
+                // 시작 및 종료 시간을 분 단위로 변환
+                const startMinutes = startHour * 60 + startMinute;
+                const endMinutes = endHour * 60 + endMinute;
+                
+                // 근무 시간 계산 (분 단위)
+                let workMinutes = endMinutes - startMinutes;
+                
+                // 점심 시간 1시간 제외
+                if (lunchBreak) {
+                    workMinutes -= 60;
+                }
+                
+                // 시간 형식으로 변환 (음수인 경우 0으로 처리)
+                return Math.max(0, +(workMinutes / 60).toFixed(2));
+            }
+            
+            // 공동근무시간 계산 함수
+            function calculateCoreTimeHours(start, end, lunchBreak) {
+                if (!start || !end) return 0;
+                
+                const [startHour, startMinute] = start.split(':').map(Number);
+                const [endHour, endMinute] = end.split(':').map(Number);
+                
+                // 시작 및 종료 시간을 분 단위로 변환
+                const startMinutes = startHour * 60 + startMinute;
+                const endMinutes = endHour * 60 + endMinute;
+                
+                // 공동근무시간 (10:00-12:00, 13:00-16:00)
+                // 오전 공동근무 (10:00-12:00)
+                const morningCoreStartMinutes = 10 * 60; // 10:00
+                const morningCoreEndMinutes = 12 * 60;   // 12:00
+                
+                // 오후 공동근무 (13:00-16:00)
+                const afternoonCoreStartMinutes = 13 * 60; // 13:00
+                const afternoonCoreEndMinutes = 16 * 60;   // 16:00
+                
+                // 오전 공동근무시간 중 실제 근무한 시간 계산
+                const morningOverlapStartMinutes = Math.max(startMinutes, morningCoreStartMinutes);
+                const morningOverlapEndMinutes = Math.min(endMinutes, morningCoreEndMinutes);
+                const morningOverlapMinutes = Math.max(0, morningOverlapEndMinutes - morningOverlapStartMinutes);
+                
+                // 오후 공동근무시간 중 실제 근무한 시간 계산
+                const afternoonOverlapStartMinutes = Math.max(startMinutes, afternoonCoreStartMinutes);
+                const afternoonOverlapEndMinutes = Math.min(endMinutes, afternoonCoreEndMinutes);
+                const afternoonOverlapMinutes = Math.max(0, afternoonOverlapEndMinutes - afternoonOverlapStartMinutes);
+                
+                // 총 공동근무시간 (오전 + 오후)
+                const totalCoreTimeMinutes = morningOverlapMinutes + afternoonOverlapMinutes;
+                
+                // 시간 형식으로 변환
+                return Math.max(0, +(totalCoreTimeMinutes / 60).toFixed(2));
+            }
+            
+            // 공동근무시간 충족 여부 확인
+            function checkCoreTimeCompliance(dailyHours, coreTimeHours) {
+                // 하루 근무시간이 8시간 이상이면 규정 대상이 아님
+                if (dailyHours >= 8) {
+                    return true;
+                }
+                
+                // 하루 근무시간의 50% 이상을 공동근무시간에 근무해야 함
+                return coreTimeHours >= (dailyHours * 0.5);
+            }
+            
+            // 시간 입력 변경 핸들러
+            function handleTimeChange(index, field, value) {
+                workTimes[index][field] = value;
+                
+                // 일일 근무 시간 다시 계산
+                workTimes[index].dailyHours = calculateHours(
+                    workTimes[index].startTime,
+                    workTimes[index].endTime,
+                    workTimes[index].lunchBreak
+                );
+                
+                // 공동근무시간 다시 계산
+                workTimes[index].coreTimeHours = calculateCoreTimeHours(
+                    workTimes[index].startTime,
+                    workTimes[index].endTime,
+                    workTimes[index].lunchBreak
+                );
+                
+                // 공동근무시간 규정 준수 여부 확인
+                workTimes[index].coreTimeStatus = checkCoreTimeCompliance(
+                    workTimes[index].dailyHours,
+                    workTimes[index].coreTimeHours
+                );
+                
+                updateUI();
+                updateSummary();
+            }
+            
+            // 점심 시간 체크박스 변경 핸들러
+            function handleLunchBreakChange(index, checked) {
+                workTimes[index].lunchBreak = checked;
+                
+                // 일일 근무 시간 다시 계산
+                workTimes[index].dailyHours = calculateHours(
+                    workTimes[index].startTime,
+                    workTimes[index].endTime,
+                    checked
+                );
+                
+                // 공동근무시간 다시 계산
+                workTimes[index].coreTimeHours = calculateCoreTimeHours(
+                    workTimes[index].startTime,
+                    workTimes[index].endTime,
+                    checked
+                );
+                
+                // 공동근무시간 규정 준수 여부 확인
+                workTimes[index].coreTimeStatus = checkCoreTimeCompliance(
+                    workTimes[index].dailyHours,
+                    workTimes[index].coreTimeHours
+                );
+                
+                updateUI();
+                updateSummary();
+            }
+            
+            // UI 업데이트
+            function updateUI() {
+                days.forEach((day, index) => {
+                    // 근무 시간 업데이트
+                    const workHoursElement = document.getElementById(`work-hours-${index}`);
+                    workHoursElement.textContent = workTimes[index].dailyHours.toFixed(2) + ' 시간';
+                    
+                    // 공동근무 상태 업데이트
+                    const coreTimeStatusElement = document.getElementById(`core-time-status-${index}`);
+                    coreTimeStatusElement.textContent = workTimes[index].coreTimeStatus ? '충족' : '미달';
+                    coreTimeStatusElement.className = `core-time-status ${workTimes[index].coreTimeStatus ? 'status-ok' : 'status-fail'}`;
+                });
+            }
+            
+            // 요약 정보 업데이트
+            function updateSummary() {
+                const totalHoursElement = document.getElementById('totalHours');
+                const statusElement = document.getElementById('status');
+                const summaryElement = document.getElementById('summary');
+                
+                // 총 근무 시간 계산
+                const total = workTimes.reduce((sum, day) => sum + day.dailyHours, 0);
+                totalHoursElement.textContent = total.toFixed(2);
+                
+                // 공동근무시간 규정 위반 여부 확인
+                const hasCoreTimeViolation = workTimes.some(day => !day.coreTimeStatus);
+                
+                // 상태 업데이트
+                let status, statusClass, summaryClass;
+                
+                // 공동근무시간 위반이 최우선 표시
+                if (hasCoreTimeViolation) {
+                    status = '공동근무시간 미달';
+                    statusClass = 'status-warning';
+                    summaryClass = 'summary-warning';
+                } 
+                // 그 다음 주간 시간 검사
+                else if (total > 40) {
+                    status = '40시간 초과';
+                    statusClass = 'status-over';
+                    summaryClass = 'summary-over';
+                } else if (total < 40) {
+                    status = '40시간 미달';
+                    statusClass = 'status-under';
+                    summaryClass = 'summary-under';
+                } else {
+                    status = '40시간 충족';
+                    statusClass = 'status-normal';
+                    summaryClass = 'summary-normal';
+                }
+                
+                statusElement.textContent = status;
+                statusElement.className = `status-badge ${statusClass}`;
+                
+                // 요약 배경색 업데이트
+                summaryElement.className = `summary-card ${summaryClass}`;
+            }
+            
+            // 앱 초기화
+            function initApp() {
+                createDayCards();
+                updateUI();
+                updateSummary();
+                
+                // 모바일에서 더블탭 줌 방지
+                document.addEventListener('dblclick', function(e) {
+                    e.preventDefault();
+                });
+            }
+            
+            // 앱 실행
+            initApp();
+        });
+    </script>
+</body>
+</html>
