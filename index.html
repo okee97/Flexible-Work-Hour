@@ -4,6 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>유연근무 계산기</title>
+
+    <!-- PWA 관련 메타 태그 -->
+    <meta name="theme-color" content="#0ea5e9">
+    <meta name="description" content="주간 유연근무제 근무시간을 계산하고 규정 준수 여부를 확인하는 앱">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="유연근무 계산기">
+    
+    <!-- 오픈그래프 메타 태그 -->
+    <meta property="og:title" content="유연근무 계산기">
+    <meta property="og:description" content="주간 유연근무제 근무시간을 계산하고 규정 준수 여부를 확인하는 앱">
+    <meta property="og:image" content="og_image.png">
+    <meta property="og:url" content="https://github.com/okee97/Flexible-Work-Hour">
+    <meta property="og:type" content="website">
+    
+    <!-- 트위터 카드 메타 태그 -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="유연근무 계산기">
+    <meta name="twitter:description" content="주간 유연근무제 근무시간을 계산하고 규정 준수 여부를 확인하는 앱">
+    <meta name="twitter:image" content="og_image.png">
+    
+    <!-- PWA 매니페스트 링크 -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- iOS용 아이콘 -->
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" href="icon.png" type="image/png">
+
     <style>
         :root {
             --primary-color: #0ea5e9;
@@ -262,6 +290,53 @@
             background-color: #f9fafb;
         }
         
+        /* 앱 설치 프롬프트 */
+        #install-prompt {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--card-bg);
+            padding: 16px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 1000;
+            border-top: 4px solid var(--primary-color);
+        }
+        
+        .prompt-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .prompt-text {
+            flex: 1;
+        }
+        
+        .prompt-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        
         /* 다크 모드 지원 */
         @media (prefers-color-scheme: dark) {
             :root {
@@ -290,6 +365,11 @@
             
             input[type="time"] {
                 background-color: #1e293b;
+                color: #f3f4f6;
+            }
+            
+            .btn-secondary {
+                background-color: #374151;
                 color: #f3f4f6;
             }
         }
@@ -323,6 +403,18 @@
                 padding: 4px 8px;
             }
         }
+        
+        /* 가로 모드 최적화 */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+            
+            .time-inputs {
+                flex-direction: row;
+            }
+        }
     </style>
 </head>
 <body>
@@ -354,6 +446,19 @@
         <div class="footer-info">
             <p>* 하루 근무 시간 = 퇴근 시각 - 출근 시각 - 점심 시간(1시간)</p>
             <p>* 점심 시간은 체크박스 선택 시 12:00~13:00(1시간)이 근무 시간에서 제외됩니다.</p>
+        </div>
+    </div>
+    
+    <!-- 앱 설치 프롬프트 -->
+    <div id="install-prompt">
+        <div class="prompt-content">
+            <div class="prompt-text">
+                <strong>유연근무 계산기</strong>를 홈 화면에 추가하시면 앱처럼 사용하실 수 있습니다.
+            </div>
+            <div class="prompt-buttons">
+                <button id="install-button" class="btn btn-primary">설치하기</button>
+                <button id="dismiss-button" class="btn btn-secondary">닫기</button>
+            </div>
         </div>
     </div>
 
@@ -571,6 +676,9 @@
                 
                 updateUI();
                 updateSummary();
+                
+                // 데이터 저장
+                saveWorkTimes();
             }
             
             // 점심 시간 체크박스 변경 핸들러
@@ -599,6 +707,9 @@
                 
                 updateUI();
                 updateSummary();
+                
+                // 데이터 저장
+                saveWorkTimes();
             }
             
             // UI 업데이트
@@ -659,10 +770,69 @@
                 summaryElement.className = `summary-card ${summaryClass}`;
             }
             
+            // 로컬 스토리지에 데이터 저장
+            function saveWorkTimes() {
+                localStorage.setItem('flexibleWorkTimes', JSON.stringify(workTimes));
+            }
+            
+            // 로컬 스토리지에서 데이터 로드
+            function loadWorkTimes() {
+                const savedData = localStorage.getItem('flexibleWorkTimes');
+                if (savedData) {
+                    workTimes = JSON.parse(savedData);
+                }
+            }
+            
+            // PWA 관련 기능
+            let deferredPrompt;
+            const installPrompt = document.getElementById('install-prompt');
+            const installButton = document.getElementById('install-button');
+            const dismissButton = document.getElementById('dismiss-button');
+            
+            // 앱 설치 프롬프트 표시 이벤트 처리
+            window.addEventListener('beforeinstallprompt', (e) => {
+                // 브라우저 기본 설치 프롬프트 방지
+                e.preventDefault();
+                // 설치 이벤트 저장
+                deferredPrompt = e;
+                // 설치 프롬프트 표시
+                installPrompt.style.display = 'block';
+            });
+            
+            // 설치 버튼 클릭 처리
+            installButton.addEventListener('click', () => {
+                // 설치 프롬프트 숨기기
+                installPrompt.style.display = 'none';
+                // 설치 프롬프트 표시
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    // 사용자의 선택 확인
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('사용자가 앱 설치를 수락했습니다.');
+                        } else {
+                            console.log('사용자가 앱 설치를 거부했습니다.');
+                        }
+                        // deferredPrompt 초기화
+                        deferredPrompt = null;
+                    });
+                }
+            });
+            
+            // 닫기 버튼 클릭 처리
+            dismissButton.addEventListener('click', () => {
+                installPrompt.style.display = 'none';
+            });
+            
             // 앱 초기화
             function initApp() {
+                // 저장된 데이터 로드
+                loadWorkTimes();
+                // 요일 카드 생성
                 createDayCards();
+                // UI 업데이트
                 updateUI();
+                // 요약 정보 업데이트
                 updateSummary();
                 
                 // 모바일에서 더블탭 줌 방지
@@ -671,9 +841,18 @@
                 });
             }
             
+            // Service Worker 등록
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js')
+                        .then(registration => {
+                            console.log('Service Worker 등록 성공:', registration.scope);
+                        })
+                        .catch(error => {
+                            console.log('Service Worker 등록 실패:', error);
+                        });
+                });
+            }
+            
             // 앱 실행
             initApp();
-        });
-    </script>
-</body>
-</html>
